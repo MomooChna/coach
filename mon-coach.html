@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141416">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Mon Coach</title>
+<style>
+:root{--bg:#141416;--card:#1F1F23;--card2:#28282E;--line:#2E2E33;--txt:#EDEDEA;--mut:#8A8A85;--dim:#6B6B66;--teal:#5DCAA5;--coral:#F0997B;--amber:#FAC775;--red:#F09595}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;padding-bottom:84px}
+.wrap{max-width:520px;margin:0 auto;padding:20px 16px 8px}
+h1{font-size:21px;font-weight:600;margin:2px 0 4px}
+h2{font-size:16px;font-weight:600;margin:0 0 10px}
+.sub{font-size:12.5px;color:var(--mut)}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--card);border-radius:14px;padding:12px 14px}
+.stat .lbl{font-size:11.5px;color:var(--mut);margin-bottom:2px}
+.stat .val{font-size:22px;font-weight:600}
+.stat .delta{font-size:11.5px;margin-top:2px}
+.row{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:0.5px solid var(--line)}
+.row:last-child{border-bottom:none}
+.chk{width:22px;height:22px;min-width:22px;border:1.5px solid var(--dim);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--bg);cursor:pointer}
+.chk.on{background:var(--teal);border-color:var(--teal)}
+.done{color:var(--dim);text-decoration:line-through}
+.tag{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--card2);color:var(--mut)}
+.tag.coral{color:var(--coral)}.tag.teal{color:var(--teal)}.tag.amber{color:var(--amber)}
+button{font-family:inherit;font-size:13.5px;background:var(--card2);color:var(--txt);border:none;border-radius:10px;padding:9px 14px;cursor:pointer}
+button.pri{background:var(--teal);color:#0A2B20;font-weight:600}
+button.ghost{background:none;border:1px solid var(--line);color:var(--mut)}
+input,select{font-family:inherit;font-size:15px;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%}
+input.charge{width:76px;padding:6px 8px;font-size:13px;text-align:center}
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:#18181B;border-top:0.5px solid var(--line);display:flex;justify-content:space-around;padding:8px 4px calc(10px + env(safe-area-inset-bottom))}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--dim);font-size:10.5px;cursor:pointer;padding:2px 8px;background:none;border:none}
+.tab.on{color:var(--txt)}
+.tab svg{width:22px;height:22px}
+.seg{display:flex;background:var(--card);border-radius:10px;padding:3px;margin-bottom:14px}
+.seg button{flex:1;background:none;color:var(--mut);padding:7px}
+.seg button.on{background:var(--card2);color:var(--txt);font-weight:600}
+.rcard{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.macro{display:flex;gap:8px;font-size:11.5px;color:var(--mut);flex-wrap:wrap}
+.macro b{color:var(--txt);font-weight:600}
+.store{font-size:12px;font-weight:600;color:var(--amber);margin:14px 0 4px;text-transform:uppercase;letter-spacing:0.5px}
+.tot{display:flex;justify-content:space-between;font-size:14px;padding:10px 0 0;border-top:0.5px solid var(--line);margin-top:10px}
+.big{font-size:17px;font-weight:600}
+.back{color:var(--mut);font-size:13.5px;background:none;border:none;padding:0 0 12px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.step{display:flex;gap:11px;padding:8px 0}
+.stepn{min-width:24px;height:24px;border-radius:50%;background:var(--card2);color:var(--coral);font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.note{font-size:12.5px;color:var(--mut);background:var(--card);border-left:3px solid var(--amber);border-radius:0;padding:10px 12px;margin:12px 0}
+.spacer{flex:1}
+.small{font-size:12.5px;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<nav class="tabbar" id="tabbar"></nav>
+<script>
+/* ============ DONNÉES ============ */
+const KCAL_JOUR = 2400, PROT_JOUR = "160–175 g";
+const COLLATION = {n:"Collation (16-17 h)", d:"250 g skyr ou fromage blanc + 1 fruit + 30 g d'amandes", kcal:400, prot:28};
+
+const RECETTES = [
+ {id:"chili", n:"Chili con carne", kcal:980, prot:62, portions:4, serve:"Servir avec 90 g de riz cru par portion (360 g pour 4).",
+  ing:[["Bœuf haché 5 %","800 g","boucher",9.00],["Haricots rouges","2 boîtes","aldi",1.80],["Tomates concassées","2 boîtes","aldi",1.50],["Oignons","2","aldi",0.50],["Ail","3 gousses","aldi",0.30],["Poivrons","2","aldi",1.60],["Riz basmati","360 g","aldi",1.00]],
+  steps:["Fais revenir oignons + ail dans 2 c.à.s d'huile d'olive.","Ajoute le bœuf, fais-le dorer en l'émiettant.","Ajoute poivrons en dés, cumin et paprika (1 c.à.s chacun).","Ajoute tomates + haricots égouttés, sale, poivre.","Mijote 25 min à couvert. Répartis en 4 boîtes.","Cuis le riz à part (90 g cru par portion)."]},
+ {id:"roti", n:"Poulet rôti, pommes de terre & légumes", kcal:950, prot:55, portions:4, serve:"Tout est dans le plat, rien à ajouter.",
+  ing:[["Hauts de cuisse de poulet","900 g","boucher",7.00],["Pommes de terre","1,2 kg","aldi",1.50],["Courgettes","2","aldi",1.60],["Poivrons","2","aldi",1.60],["Carottes","500 g","aldi",0.80],["Oignons","2","aldi",0.50]],
+  steps:["Four à 200 °C. Coupe pommes de terre et légumes en morceaux.","Étale tout sur 2 plaques avec le poulet.","3 c.à.s d'huile d'olive, herbes de Provence, paprika, sel.","45 min au four, remue à mi-cuisson.","Répartis en 4 boîtes."]},
+ {id:"curry", n:"Curry de poulet aux pois chiches", kcal:970, prot:58, portions:4, serve:"Servir avec 90 g de riz cru par portion.",
+  ing:[["Hauts de cuisse de poulet","800 g","boucher",6.50],["Pois chiches","2 boîtes","aldi",1.80],["Épinards surgelés","400 g","aldi",1.50],["Tomates concassées","1 boîte","aldi",0.75],["Lait de coco light","200 ml","delhaize",1.80],["Oignon","1","aldi",0.25],["Riz basmati","360 g","aldi",1.00]],
+  steps:["Fais revenir l'oignon, ajoute le poulet en morceaux.","Ajoute 1 c.à.s de curry + gingembre, fais griller 1 min.","Ajoute tomates, pois chiches égouttés, lait de coco.","Mijote 20 min, ajoute les épinards 5 min à la fin.","Répartis en 4 boîtes. Cuis le riz à part."]},
+ {id:"maq", n:"Poêlée maquereau, pommes de terre & haricots verts", kcal:920, prot:50, portions:4, serve:"Ajoute le poisson au moment de réchauffer, pas avant.",
+  ing:[["Maquereaux ou sardines","4 boîtes","aldi",6.00],["Pommes de terre","1,2 kg","aldi",1.50],["Haricots verts surgelés","800 g","aldi",2.40]],
+  steps:["Cuis les pommes de terre en morceaux (eau bouillante 15 min).","Cuis les haricots verts (10 min).","Sauce : 2 c.à.s moutarde + 2 c.à.s huile d'olive + 1 c.à.s vinaigre.","Mélange pommes de terre + haricots + sauce, répartis en 4 boîtes.","Au moment de manger : réchauffe et ajoute 1 boîte de poisson égoutté."]},
+ {id:"bolo", n:"Bolognaise mixte bœuf-lentilles", kcal:990, prot:55, portions:4, serve:"Servir avec 110 g de pâtes complètes crues par portion.",
+  ing:[["Bœuf haché 5 %","500 g","boucher",6.00],["Lentilles vertes sèches","250 g","aldi",1.20],["Tomates concassées","2 boîtes","aldi",1.50],["Carottes","300 g","aldi",0.50],["Oignons + ail","2 + 3 gousses","aldi",0.70],["Pâtes complètes","440 g","aldi",1.30]],
+  steps:["Fais revenir oignons, ail, carottes râpées.","Ajoute le bœuf, fais dorer.","Ajoute tomates + lentilles + 400 ml d'eau + herbes.","Mijote 35 min (les lentilles doivent être tendres).","Répartis en 4 boîtes. Cuis les pâtes à part."]},
+ {id:"chak", n:"Chakchouka (œufs à la tomate)", kcal:930, prot:48, portions:4, serve:"4 œufs par portion, pochés au moment de réchauffer. 120 g de pain complet.",
+  ing:[["Œufs","16","aldi",4.50],["Tomates concassées","3 boîtes","aldi",2.25],["Poivrons","3","aldi",2.40],["Oignons","2","aldi",0.50],["Pain complet","480 g","delhaize",3.50]],
+  steps:["Fais revenir oignons + poivrons en lanières 8 min.","Ajoute tomates, cumin, paprika. Mijote 15 min.","Répartis la sauce en 4 boîtes.","Au moment de manger : réchauffe la sauce à la poêle, casse 4 œufs dedans, couvre 5 min.","Sers avec 120 g de pain."]},
+ {id:"dahl", n:"Dahl de lentilles corail + œufs durs", kcal:950, prot:52, portions:4, serve:"3 œufs durs par portion, ajoutés au moment de servir. 70 g riz cru/portion.",
+  ing:[["Lentilles corail","400 g","aldi",1.80],["Œufs","12","aldi",3.00],["Tomates concassées","1 boîte","aldi",0.75],["Lait de coco light","200 ml","delhaize",1.80],["Oignon + ail","1 + 2 gousses","aldi",0.55],["Riz basmati","280 g","aldi",0.80]],
+  steps:["Fais revenir oignon + ail, ajoute curry et cumin.","Ajoute lentilles + tomates + 800 ml d'eau.","Mijote 20 min, ajoute le lait de coco à la fin.","Cuis les 12 œufs durs (9 min). Répartis dahl en 4 boîtes.","Au moment de manger : réchauffe + 3 œufs durs coupés en deux."]},
+ {id:"wok", n:"Riz sauté poulet-légumes (anti fast-food)", kcal:960, prot:60, portions:4, serve:"Ta recette de secours quand l'envie de fast-food monte.",
+  ing:[["Filet de poulet","800 g","boucher",9.00],["Légumes wok surgelés","800 g","aldi",2.50],["Riz basmati","360 g","aldi",1.00],["Sauce soja","1 bouteille (dure des mois)","delhaize",2.00]],
+  steps:["Cuis le riz, laisse-le refroidir (idéal : la veille).","Saute le poulet en morceaux à feu vif avec ail + gingembre.","Ajoute les légumes wok, 5 min à feu vif.","Ajoute le riz + 3 c.à.s de sauce soja + 2 œufs battus, mélange 2 min.","Répartis en 4 boîtes."]}
+];
+
+const STAPLES = {
+ "A-dim":[["Œufs","12","aldi",3.00],["Skyr / fromage blanc","4 × 250 g","aldi",4.50],["Fruits (pommes, bananes...)","8 pièces","aldi",4.50],["Amandes / noix","250 g","aldi",4.00]],
+ "A-mer":[["Skyr / fromage blanc","3 × 250 g","aldi",3.50],["Fruits","7 pièces","aldi",5.00],["Pain complet","1 pain","delhaize",3.00]],
+ "B-dim":[["Skyr / fromage blanc","4 × 250 g","aldi",4.50],["Fruits","8 pièces","aldi",4.50],["Amandes / noix","250 g","aldi",4.00]],
+ "B-mer":[["Skyr / fromage blanc","3 × 250 g","aldi",3.50],["Fruits","7 pièces","aldi",5.00]]
+};
+const SESSIONS = {
+ "A-dim":{recettes:["chili","roti"], jour:"dimanche"},
+ "A-mer":{recettes:["curry","maq"], jour:"mercredi"},
+ "B-dim":{recettes:["bolo","chak"], jour:"dimanche"},
+ "B-mer":{recettes:["dahl","wok"], jour:"mercredi"}
+};
+/* Plan repas : index 0=dimanche ... 6=samedi */
+const PLAN = {
+ A:[["roti","chili"],["roti","chili"],["chili","roti"],["chili","curry"],["maq","curry"],["curry","maq"],["maq","LIBRE"]],
+ B:[["chak","bolo"],["chak","bolo"],["bolo","chak"],["bolo","dahl"],["wok","dahl"],["dahl","wok"],["wok","LIBRE"]]
+};
+const RENFO = [
+ {id:"r1", n:"Squat pieds ouverts", d:"3 × 10"},
+ {id:"r2", n:"Exo du t-shirt", d:"3 × 10"}
+];
+const SEANCES = {
+ haut:{n:"Haut du corps", jour:"Lundi", dur:"~60 min", ech:"5 min : rameur léger + mobilité épaules", exos:[
+  {id:"dc",n:"Développé couché",d:"4 × 6-8"},{id:"th",n:"Tirage horizontal",d:"4 × 8-10"},
+  {id:"dm",n:"Développé militaire",d:"3 × 8-10"},{id:"tv",n:"Tirage vertical / tractions assistées",d:"3 × 8-10"},
+  {id:"ct",n:"Curl + triceps (superset)",d:"3 × 10 chaque"},
+  {id:"cardio",n:"Cardio tranquille — rameur ou vélo, rythme modéré",d:"10 min"}]},
+ jambes:{n:"Jambes + renfo", jour:"Mercredi", dur:"~50 min", ech:"8 min : vélo easy + mobilité hanches", exos:[
+  {id:"sq",n:"Squat (gobelet ou barre)",d:"4 × 8-10"},{id:"pr",n:"Presse ou fentes",d:"3 × 10"},
+  {id:"lc",n:"Leg curl",d:"3 × 10-12"},{id:"mo",n:"Extensions mollets",d:"3 × 12-15"},
+  {id:"gb",n:"Glute bridge",d:"3 × 10-12"},{id:"pl",n:"Gainage planche",d:"3 × 45 s"},
+  {id:"rq1",n:"Renfo : squat pieds ouverts",d:"3 × 10"},{id:"rq2",n:"Renfo : exo du t-shirt",d:"3 × 10"}]},
+ velo:{n:"Vélo gravel — Zone 2", jour:"Samedi", dur:"60 min max", ech:"", exos:[
+  {id:"v1",n:"Échauffement doux",d:"5 min"},
+  {id:"v2",n:"Zone 2 — tu peux parler sans être essoufflé",d:"50 min"},
+  {id:"v3",n:"Retour au calme",d:"5 min"}]}
+};
+const SPORT_JOUR = {1:"haut", 3:"jambes", 6:"velo"};
+
+/* ============ ÉTAT ============ */
+let mem = {weights:[], checks:{}, charges:{}, shop:{}, flip:0, hist:{}};
+let S;
+try{ S = JSON.parse(localStorage.getItem("coach117")) || mem; }catch(e){ S = mem; }
+function save(){ try{ localStorage.setItem("coach117", JSON.stringify(S)); }catch(e){} }
+
+let view = "today", detail = null, semaineCourses = null;
+const JOURS = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+function todayKey(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function isoWeek(d){ const t=new Date(d.valueOf()); t.setDate(t.getDate()+3-(t.getDay()+6)%7); const w1=new Date(t.getFullYear(),0,4); return 1+Math.round(((t-w1)/864e5-3+(w1.getDay()+6)%7)/7); }
+function semaine(){ return ((isoWeek(new Date()) + (S.flip||0)) % 2 === 0) ? "A" : "B"; }
+function rec(id){ return RECETTES.find(r=>r.id===id); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+/* ============ RENDU ============ */
+function icon(name){
+ const p = {home:"M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10", food:"M4 3v8m4-8v8M6 3v18M6 11c-1.5 0-2.5-1-2.5-3M6 11c1.5 0 2.5-1 2.5-3M15 3c-1.5 1-2.5 3-2.5 6 0 2 1 3 2.5 3v9M15 3c1.5 1 2.5 3 2.5 6",
+ cart:"M4 6h2l2.5 11h9L20 9H7M10 21a1 1 0 100-2 1 1 0 000 2zm7 0a1 1 0 100-2 1 1 0 000 2z",
+ sport:"M2 12h3m14 0h3M7 8v8m10-8v8M7 12h10M5 9v6M19 9v6",
+ chart:"M4 20V10m6 10V4m6 16v-7m4 7H2"};
+ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="'+p[name]+'"/></svg>';
+}
+const TABS = [["today","Jour","home"],["recettes","Recettes","food"],["courses","Courses","cart"],["sport","Sport","sport"],["suivi","Suivi","chart"]];
+
+function renderTabbar(){
+ document.getElementById("tabbar").innerHTML = TABS.map(t=>
+  '<button class="tab '+(view===t[0]?"on":"")+'" onclick="go(\''+t[0]+'\')">'+icon(t[2])+'<span>'+t[1]+'</span></button>').join("");
+}
+function go(v){ view=v; detail=null; render(); window.scrollTo(0,0); }
+
+function toggle(map, key){ S[map][key] = !S[map][key]; save(); render(); }
+function chk(map, key, label, extra){
+ const on = !!S[map][key];
+ return '<div class="row"><div class="chk '+(on?"on":"")+'" onclick="toggle(\''+map+'\',\''+key+'\')">'+(on?"✓":"")+'</div><span class="'+(on?"done":"")+'" style="flex:1">'+label+'</span>'+(extra||"")+'</div>';
+}
+
+/* ---- AUJOURD'HUI ---- */
+function vToday(){
+ const d = new Date(), day = d.getDay(), tk = todayKey(), sem = semaine();
+ const plan = PLAN[sem][day];
+ const sport = SPORT_JOUR[day];
+ const lastW = S.weights.length ? S.weights[S.weights.length-1] : null;
+ let prevAvg = null;
+ if(S.weights.length >= 4){ const w=S.weights; const rec3=w.slice(-3).reduce((a,b)=>a+b.kg,0)/3; const old3=w.slice(-6,-3); if(old3.length){ prevAvg = rec3 - old3.reduce((a,b)=>a+b.kg,0)/old3.length; } }
+ const seancesFaites = Object.keys(S.hist).filter(k=>{ const dd=new Date(k); const now=new Date(); const monday=new Date(now); monday.setDate(now.getDate()-((now.getDay()+6)%7)); monday.setHours(0,0,0,0); return dd>=monday; }).length;
+ let h = '<p class="sub">'+JOURS[day]+' '+d.getDate()+' '+MOIS[d.getMonth()]+' · semaine '+sem+'</p><h1>Aujourd\'hui</h1><div style="height:14px"></div>';
+ h += '<div class="grid2"><div class="stat"><div class="lbl">Poids</div><div class="val">'+(lastW?lastW.kg.toFixed(1):"—")+'</div><div class="delta" style="color:'+(prevAvg!==null&&prevAvg<0?"var(--teal)":"var(--mut)")+'">'+(prevAvg!==null?(prevAvg>0?"+":"")+prevAvg.toFixed(1)+" kg (moy. 3 pesées)":"note tes pesées")+'</div></div>';
+ h += '<div class="stat"><div class="lbl">Séances</div><div class="val">'+seancesFaites+' / 3</div><div class="delta" style="color:var(--mut)">cette semaine</div></div></div>';
+ /* Repas */
+ h += '<div class="card"><h2>Repas · ~'+KCAL_JOUR+' kcal</h2>';
+ h += chk("checks", tk+"-m1", '<span class="tag coral" style="margin-right:6px">Midi</span>'+ (plan[0]==="LIBRE"?"Repas libre 🎉":esc(rec(plan[0]).n)));
+ h += chk("checks", tk+"-m2", '<span class="tag coral" style="margin-right:6px">16 h</span>'+esc(COLLATION.d));
+ h += chk("checks", tk+"-m3", '<span class="tag coral" style="margin-right:6px">Soir</span>'+ (plan[1]==="LIBRE"?"Repas libre — resto ou commande, zéro culpabilité":esc(rec(plan[1]).n)));
+ h += '</div>';
+ /* Cuisine */
+ if(day===0 || day===3){
+  const sk = sem+"-"+(day===0?"dim":"mer");
+  const rs = SESSIONS[sk].recettes.map(id=>rec(id).n).join(" + ");
+  h += '<div class="card" style="border-left:3px solid var(--amber);border-radius:0 14px 14px 0"><h2>🍳 Batch cooking aujourd\'hui</h2><p class="small">Session '+(day===0?"1":"2")+' : '+esc(rs)+' — 4 portions chacune.</p><div style="height:8px"></div><button onclick="go(\'recettes\')">Voir les recettes</button></div>';
+ }
+ /* Renfo quotidien */
+ h += '<div class="card"><h2>Renfo quotidien (kiné)</h2>';
+ RENFO.forEach(r=>{ h += chk("checks", tk+"-"+r.id, esc(r.n)+' <span class="small">'+r.d+'</span>'); });
+ h += '</div>';
+ /* Sport */
+ h += '<div class="card"><h2>Sport</h2>';
+ if(sport){
+  const sc = SEANCES[sport];
+  const fait = !!S.hist[tk];
+  h += '<div style="display:flex;justify-content:space-between;align-items:center"><div><p><b>'+sc.n+'</b> · '+sc.dur+'</p><p class="small">'+(fait?"Séance validée ✓":"C\'est ton jour. Règle des 10 minutes : commence, c\'est tout.")+'</p></div>'+(fait?"":'<button class="pri" onclick="go(\'sport\')">Ouvrir</button>')+'</div>';
+ } else {
+  const next = day<1?"lundi (haut du corps)":day<3?"mercredi (jambes)":day<6?"samedi (vélo)":"lundi (haut du corps)";
+  h += '<p class="small">Repos aujourd\'hui · prochaine séance : '+next+'</p>';
+ }
+ h += '</div>';
+ /* Pesée */
+ h += '<div class="card"><h2>Pesée du matin</h2><div style="display:flex;gap:8px"><input type="number" step="0.1" inputmode="decimal" id="wkg" placeholder="ex. 116.4"><button class="pri" onclick="addW()">Noter</button></div><p class="small" style="margin-top:8px">3×/semaine à jeun. Regarde la tendance, jamais le chiffre du jour.</p></div>';
+ return h;
+}
+function addW(){
+ const v = parseFloat(document.getElementById("wkg").value.replace(",","."));
+ if(!v || v<40 || v>250) return;
+ const tk = todayKey();
+ S.weights = S.weights.filter(w=>w.d!==tk);
+ S.weights.push({d:tk, kg:v}); S.weights.sort((a,b)=>a.d<b.d?-1:1); save(); render();
+}
+
+/* ---- RECETTES ---- */
+function vRecettes(){
+ if(detail){
+  const r = rec(detail);
+  const cost = r.ing.reduce((a,i)=>a+i[3],0);
+  let h = '<button class="back" onclick="detail=null;render()">‹ Recettes</button><h1>'+esc(r.n)+'</h1>';
+  h += '<p class="sub">'+r.portions+' portions · ~'+r.kcal+' kcal et '+r.prot+' g de protéines par portion</p><div style="height:14px"></div>';
+  h += '<div class="card"><h2>Ingrédients (pour 4 portions)</h2>';
+  r.ing.forEach(i=>{ h += '<div class="row"><span style="flex:1">'+esc(i[0])+'</span><span class="small">'+esc(i[1])+'</span><span class="tag amber">'+i[3].toFixed(2)+' €</span></div>'; });
+  h += '<div class="tot"><span>Coût de la recette</span><span class="big">'+cost.toFixed(2)+' €</span></div><p class="small" style="margin-top:4px">soit '+(cost/4).toFixed(2)+' € par portion · huile, épices et condiments : placard</p></div>';
+  h += '<div class="card"><h2>Préparation</h2>';
+  r.steps.forEach((s,i)=>{ h += '<div class="step"><div class="stepn">'+(i+1)+'</div><p style="flex:1">'+esc(s)+'</p></div>'; });
+  h += '</div>';
+  h += '<div class="note">'+esc(r.serve)+'</div>';
+  return h;
+ }
+ let h = '<h1>Recettes</h1><p class="sub">8 plats en rotation sur 2 semaines · 4 portions par recette</p><div style="height:14px"></div>';
+ const semA = ["chili","roti","curry","maq"], semB = ["bolo","chak","dahl","wok"];
+ [["Semaine A",semA],["Semaine B",semB]].forEach(g=>{
+  h += '<p class="store">'+g[0]+'</p>';
+  g[1].forEach(id=>{ const r=rec(id);
+   h += '<div class="rcard" onclick="detail=\''+id+'\';render();window.scrollTo(0,0)"><div><p style="font-weight:600;margin-bottom:3px">'+esc(r.n)+'</p><div class="macro"><span><b>'+r.kcal+'</b> kcal</span><span><b>'+r.prot+' g</b> prot</span><span>'+r.ing.reduce((a,i)=>a+i[3],0).toFixed(2)+' € / 4 portions</span></div></div><span style="color:var(--dim)">›</span></div>';
+  });
+ });
+ return h;
+}
+
+/* ---- COURSES ---- */
+function vCourses(){
+ const sem = semaineCourses || semaine();
+ let h = '<h1>Courses</h1><p class="sub">2 passages par semaine, un par session de cuisine</p><div style="height:14px"></div>';
+ h += '<div class="seg"><button class="'+(sem==="A"?"on":"")+'" onclick="semaineCourses=\'A\';render()">Semaine A</button><button class="'+(sem==="B"?"on":"")+'" onclick="semaineCourses=\'B\';render()">Semaine B</button></div>';
+ if(sem===semaine()) h += '<p class="small" style="margin:-6px 0 12px">← c\'est ta semaine en cours</p>';
+ ["dim","mer"].forEach(sk=>{
+  const key = sem+"-"+sk, ses = SESSIONS[key];
+  let items = [];
+  ses.recettes.forEach(id=>{ rec(id).ing.forEach(i=>items.push({i, from:rec(id).n, k:key+"-"+id+"-"+i[0]})); });
+  STAPLES[key].forEach(i=>items.push({i, from:"collations & base", k:key+"-st-"+i[0]}));
+  const total = items.reduce((a,x)=>a+x.i[3],0);
+  h += '<div class="card"><h2>Courses du '+ses.jour+' <span class="small" style="font-weight:400">· pour '+ses.recettes.map(id=>rec(id).n).join(" + ")+'</span></h2>';
+  ["boucher","aldi","delhaize"].forEach(st=>{
+   const sub = items.filter(x=>x.i[2]===st);
+   if(!sub.length) return;
+   h += '<p class="store">'+(st==="boucher"?"Boucher":st==="aldi"?"Aldi":"Delhaize / boulangerie")+'</p>';
+   sub.forEach(x=>{ h += chk("shop", x.k, esc(x.i[0])+' — <b>'+esc(x.i[1])+'</b> <span class="small">('+esc(x.from)+')</span>', '<span class="tag amber">'+x.i[3].toFixed(2)+' €</span>'); });
+  });
+  h += '<div class="tot"><span>Total '+ses.jour+'</span><span class="big">~'+total.toFixed(0)+' €</span></div></div>';
+ });
+ const tA = tSem(sem);
+ h += '<div class="note">Total semaine '+sem+' : ~'+tA.toFixed(0)+' € → ~'+(tA*4.33).toFixed(0)+' €/mois. Budget : 400 €. Corrige les prix après tes premières vraies courses.</div>';
+ h += '<button class="ghost" onclick="resetShop(\''+sem+'\')">Décocher toute la semaine '+sem+'</button>';
+ return h;
+}
+function tSem(sem){ let t=0; ["dim","mer"].forEach(sk=>{ const key=sem+"-"+sk; SESSIONS[key].recettes.forEach(id=>rec(id).ing.forEach(i=>t+=i[3])); STAPLES[key].forEach(i=>t+=i[3]); }); return t; }
+function resetShop(sem){ Object.keys(S.shop).forEach(k=>{ if(k.startsWith(sem+"-")) delete S.shop[k]; }); save(); render(); }
+
+/* ---- SPORT ---- */
+function vSport(){
+ const tk = todayKey();
+ let h = '<h1>Sport</h1><p class="sub">3 séances par semaine. 3 tenues valent mieux que 5 rêvées.</p><div style="height:14px"></div>';
+ Object.keys(SEANCES).forEach(id=>{
+  const s = SEANCES[id];
+  h += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><h2>'+s.n+'</h2><span class="tag teal">'+s.jour+' · '+s.dur+'</span></div>';
+  if(s.ech) h += '<p class="small" style="margin-bottom:6px">Échauffement — '+esc(s.ech)+'</p>';
+  s.exos.forEach(e=>{
+   const ck = tk+"-"+id+"-"+e.id;
+   const charge = id!=="velo" && e.id!=="cardio" ? '<input class="charge" placeholder="kg" value="'+esc(S.charges[id+"-"+e.id]||"")+'" onchange="setCharge(\''+id+"-"+e.id+'\',this.value)">' : '';
+   h += chk("checks", ck, esc(e.n)+' <span class="small">'+e.d+'</span>', charge);
+  });
+  const fait = S.hist[tk]===id;
+  h += '<div style="height:10px"></div><button class="'+(fait?"":"pri")+'" onclick="valider(\''+id+'\')">'+(fait?"Séance validée ✓":"Valider la séance")+'</button>';
+  h += '</div>';
+ });
+ h += '<div class="note">Pas motivé ? Séance minimum : les 3 premiers exercices, 25 min, et tu valides quand même. Sauter 1× = accident. Sauter 2× = nouvelle habitude.</div>';
+ h += '<div class="note" style="border-color:var(--teal)">Renfo kiné (squat pieds ouverts + exo du t-shirt, 3×10) : tous les jours, à cocher sur l\'écran Jour. Progression vélo : quand 1 h devient facile 6 semaines de suite, on passe à 1 h 15.</div>';
+ return h;
+}
+function setCharge(k,v){ S.charges[k]=v; save(); }
+function valider(id){ const tk=todayKey(); if(S.hist[tk]===id){ delete S.hist[tk]; } else { S.hist[tk]=id; } save(); render(); }
+
+/* ---- SUIVI ---- */
+function vSuivi(){
+ let h = '<h1>Suivi</h1><p class="sub">La tendance sur 2-3 semaines, jamais le chiffre du jour</p><div style="height:14px"></div>';
+ h += '<div class="card"><h2>Poids</h2>'+chart()+'</div>';
+ const hist = Object.keys(S.hist).sort().reverse().slice(0,15);
+ h += '<div class="card"><h2>Séances validées</h2>';
+ if(!hist.length) h += '<p class="small">Aucune pour l\'instant. La première croix est la plus importante.</p>';
+ hist.forEach(k=>{ const d=new Date(k+"T12:00"); h += '<div class="row"><span class="chk on">✓</span><span style="flex:1">'+SEANCES[S.hist[k]].n+'</span><span class="small">'+d.getDate()+' '+MOIS[d.getMonth()].slice(0,4)+'.</span></div>'; });
+ h += '</div>';
+ const lw = S.weights;
+ if(lw.length>=2){
+  const perdu = lw[0].kg - lw[lw.length-1].kg;
+  h += '<div class="grid2"><div class="stat"><div class="lbl">Perdu au total</div><div class="val" style="color:var(--teal)">'+(perdu>0?"−":"+")+Math.abs(perdu).toFixed(1)+' kg</div></div><div class="stat"><div class="lbl">Objectif −5 % (foie)</div><div class="val">'+Math.max(0,(lw[0].kg*0.95)).toFixed(1)+' kg</div></div></div>';
+ }
+ h += '<div class="note" style="border-color:var(--red)">Alerte : perte &gt; 1 kg/sem sur 3 semaines → remonte de ~200 kcal/jour. Douleur tendon qui empire → stop bas du corps, médecin. Stagnation &gt; 3 semaines → on recalcule ensemble.</div>';
+ if(S.weights.length){ h += '<button class="ghost" onclick="if(confirm(\'Supprimer la dernière pesée ?\')){S.weights.pop();save();render();}">Supprimer la dernière pesée</button>'; }
+ return h;
+}
+function chart(){
+ const w = S.weights;
+ if(w.length<2) return '<p class="small">Note au moins 2 pesées (écran Jour) pour voir la courbe.</p>';
+ const vals = w.map(x=>x.kg), min = Math.min(...vals)-0.5, max = Math.max(...vals)+0.5;
+ const W=440,H=160,P=30;
+ const pts = w.map((x,i)=>[P+(W-2*P)*(w.length===1?0:i/(w.length-1)), H-P-(H-2*P)*((x.kg-min)/(max-min))]);
+ let s = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%">';
+ s += '<line x1="'+P+'" y1="'+(H-P)+'" x2="'+(W-P)+'" y2="'+(H-P)+'" stroke="#2E2E33"/>';
+ s += '<text x="'+(P-4)+'" y="'+(P+4)+'" fill="#8A8A85" font-size="11" text-anchor="end">'+max.toFixed(1)+'</text>';
+ s += '<text x="'+(P-4)+'" y="'+(H-P)+'" fill="#8A8A85" font-size="11" text-anchor="end">'+min.toFixed(1)+'</text>';
+ s += '<polyline points="'+pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")+'" fill="none" stroke="#5DCAA5" stroke-width="2.5" stroke-linejoin="round"/>';
+ pts.forEach((p,i)=>{ s += '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.5" fill="#5DCAA5"/>'; });
+ const last = w[w.length-1];
+ s += '<text x="'+pts[pts.length-1][0].toFixed(1)+'" y="'+(pts[pts.length-1][1]-9).toFixed(1)+'" fill="#EDEDEA" font-size="12" font-weight="600" text-anchor="middle">'+last.kg.toFixed(1)+'</text>';
+ s += '</svg>';
+ return s;
+}
+
+/* ============ ROUTEUR ============ */
+function render(){
+ const V = {today:vToday, recettes:vRecettes, courses:vCourses, sport:vSport, suivi:vSuivi};
+ document.getElementById("app").innerHTML = V[view]();
+ renderTabbar();
+}
+render();
+</script>
+</body>
+</html>
